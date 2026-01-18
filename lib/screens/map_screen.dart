@@ -22,12 +22,14 @@ class MapScreen extends StatelessWidget {
                     options: MapOptions(
                       initialCenter: centerLocation,
                       initialZoom: 16.0,
+                      interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                      ),
                     ),
+                    
                     children: [
-                      // --- ZMIANA: Używamy mapy CartoDB (nie blokuje i jest ładniejsza) ---
                       TileLayer(
                         urlTemplate: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                        // CartoDB nie wymaga userAgentPackageName, wiec jest prosciej
                       ),
                       
                       MarkerLayer(
@@ -36,6 +38,9 @@ class MapScreen extends StatelessWidget {
                             point: centerLocation,
                             width: 80,
                             height: 80,
+                            // --- ZMIANA: To sprawia, że ludzik jest zawsze pionowo ---
+                            rotate: false, 
+                            // --------------------------------------------------------
                             child: const UserLocationMarker(),
                           ),
                         ],
@@ -95,7 +100,7 @@ class MapScreen extends StatelessWidget {
   }
 }
 
-// ... (Reszta klas: UserLocationMarker i TrianglePainter bez zmian)
+// --- Pozostałe klasy (UserLocationMarker, TrianglePainter) pozostają bez zmian ---
 class UserLocationMarker extends StatelessWidget {
   const UserLocationMarker({super.key});
   @override
@@ -105,7 +110,7 @@ class UserLocationMarker extends StatelessWidget {
       children: [
         Container(
           width: 60, height: 60,
-          decoration: BoxDecoration(color: const Color(0xFF00C896).withOpacity(0.3), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: const Color(0xFFFF99BE).withOpacity(0.3), shape: BoxShape.circle),
         ),
         Container(
           width: 40, height: 40,

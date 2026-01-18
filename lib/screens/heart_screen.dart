@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/common_widgets.dart';
+import 'heart_history_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../widgets/notification_bell.dart';
 
 class HeartRateScreen extends StatelessWidget {
   const HeartRateScreen({super.key});
@@ -57,9 +60,17 @@ class TitleSection extends StatelessWidget {
         ),
         Row(
           children: [
-            _circleButton(Icons.bar_chart_rounded), 
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HeartHistoryScreen()),
+                );
+              },
+              child: _circleButton(Icons.bar_chart_rounded),
+            ),
             const SizedBox(width: 12),
-            _circleButton(Icons.share_outlined),
+            const NotificationBell(),
           ],
         )
       ],
@@ -87,11 +98,11 @@ class HeartIndicator extends StatelessWidget {
       width: 180,
       height: 180,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFCDE2), 
+        color: const Color(0xFFFFCCDE), 
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFCDE2).withOpacity(0.5),
+            color: const Color(0xFFFFCCDE).withOpacity(0.5),
             blurRadius: 20,
             spreadRadius: 5,
           )
@@ -102,13 +113,12 @@ class HeartIndicator extends StatelessWidget {
           width: 100,
           height: 100,
           decoration: const BoxDecoration(
-            color: Color(0xFFFF8FA3), 
+            color: Color(0xFFFF99BE), 
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.monitor_heart,
-            size: 50,
-            color: Colors.white,
+          padding: const EdgeInsets.all(22.0), 
+          child: SvgPicture.asset(
+            'assets/serce.svg',
           ),
         ),
       ),
@@ -130,7 +140,7 @@ class ResultValue extends StatelessWidget {
                 text: '82',
                 style: TextStyle(
                   fontSize: 64,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                   color: Color(0xFF2D2D2D),
                   height: 1.0,
                 ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../screens/heart_screen.dart';
 import '../screens/temp_screen.dart';
-import '../screens/map_screen.dart'; 
+import '../screens/map_screen.dart';
+import '../screens/history_screen.dart';
+import '../screens/calendar_screen.dart'; 
 
 class HeaderSection extends StatelessWidget {
   const HeaderSection({super.key});
@@ -64,8 +66,8 @@ class CustomBottomNavBar extends StatelessWidget {
           _navItem(context, Icons.device_thermostat, isActive: activeIndex == 0, targetPage: const TemperatureScreen()),
           _navItem(context, Icons.favorite_border, isActive: activeIndex == 1, targetPage: const HeartRateScreen()),
           _navItem(context, Icons.location_on_outlined, isActive: activeIndex == 2, targetPage: const MapScreen()),
-          _navItem(context, Icons.calendar_today_outlined, isActive: false),
-          _navItem(context, Icons.history, isActive: false),
+          _navItem(context, Icons.calendar_today_outlined, isActive: activeIndex == 3, targetPage: const CalendarScreen()),
+          _navItem(context, Icons.history, isActive: activeIndex == 4, targetPage: const HistoryScreen()),
         ],
       ),
     );
