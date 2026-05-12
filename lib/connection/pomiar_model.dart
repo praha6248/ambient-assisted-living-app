@@ -1,5 +1,6 @@
 /*
 Transport modelu danych dla pomiarów tętna i saturacji krwi.
+Czyli tłumaczenie danych z formatu JSON otrzymanego z serwera na obiekt Dart, który można łatwo używać w aplikacji Flutter.
 */
 class Pomiar {
   final String data;
@@ -12,7 +13,6 @@ class Pomiar {
     return Pomiar(
       data: json['data'],
       tetno: json['tetno'],
-      // Zabezpieczenie, gdyby serwer wysłał int zamiast double
       saturacja: json['saturacja'].toDouble(),
     );
   }

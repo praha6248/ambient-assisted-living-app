@@ -1,16 +1,44 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'services/local_notifications.dart'; 
-import 'screens/temp_screen.dart'; 
+import 'package:path_provider/path_provider.dart';
+import 'services/local_notifications.dart';
+import 'screens/temp_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await initializeDateFormatting('pl_PL', null);
-  
   await LocalNotifications.init();
 
+  await setupAndStartTor();
+
   runApp(const MyApp());
+}
+
+Future<void> setupAndStartTor() async {
+  try {
+    final directory = await getApplicationSupportDirectory();
+    final torPath = '${directory.path}\\tor.exe';
+    final torFile = File(torPath);
+
+    if (!await torFile.exists()) {
+      debugPrint("Wypakowuję silnik Tor z zasobów...");
+      final data = await rootBundle.load('assets/bin/tor.exe');
+      final bytes = data.buffer.asUint8List();
+      await torFile.writeAsBytes(bytes);
+      debugPrint("Wypakowano do: $torPath");
+    }
+
+    debugPrint("Uruchamiam proces Tor w tle...");
+
+    await Process.start(torPath, ['--SocksPort', '9050']);
+
+    debugPrint("Tor zainicjowany poprawnie na porcie 9050");
+  } catch (e) {
+    debugPrint("KRYTYCZNY BŁĄD TORA: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -24,9 +52,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF669D)),
-        fontFamily: 'Roboto', 
+        fontFamily: 'Roboto',
       ),
-      home: const TemperatureScreen(), 
+      home: const TemperatureScreen(),
     );
   }
 }
