@@ -136,7 +136,7 @@ class CustomBottomNavBar extends StatelessWidget {
             children: [
               _navItem(
                 context,
-                Icons.invert_colors,
+                Icons.opacity,
                 isActive: activeIndex == 0,
                 targetPage: const BloodSaturationScreen(),
                 isHighContrast: isHighContrast,

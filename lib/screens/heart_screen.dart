@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../widgets/common_widgets.dart'; 
+import '../widgets/common_widgets.dart';
 import 'heart_history_screen.dart';
 import '../services/theme_service.dart';
+import '../connection/pomiar_model.dart';
+import '../services/pomiar_service.dart';
 
 class HeartRateScreen extends StatelessWidget {
   const HeartRateScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Pobieramy ostatni pomiar z naszego serwisu
+    final Pomiar ostatniPomiar = PomiarService.getOstatniPomiar();
+
     return ValueListenableBuilder<bool>(
       valueListenable: ThemeService().isHighContrast,
       builder: (context, isHighContrast, child) {
-        
         final bgColor = isHighContrast ? Colors.black : const Color(0xFFF4F1F2);
 
         return Scaffold(
@@ -27,7 +31,8 @@ class HeartRateScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const HeartHistoryScreen()),
+                        builder: (context) => const HeartHistoryScreen(),
+                      ),
                     );
                   },
                 ),
@@ -39,13 +44,23 @@ class HeartRateScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const SizedBox(height: 20),
-                        // Serce (z Twoim czerwonym kolorem w środku)
                         HeartIndicator(isHighContrast: isHighContrast),
-                        const SizedBox(height: 20), 
-                        ResultValue(isHighContrast: isHighContrast),
+                        const SizedBox(height: 20),
+
+                        // Przekazujemy dynamiczne tętno
+                        ResultValue(
+                          isHighContrast: isHighContrast,
+                          tetno: ostatniPomiar.tetno,
+                        ),
+
                         const SizedBox(height: 30),
-                        // Karta z nowym paskiem
-                        StatusCard(isHighContrast: isHighContrast),
+
+                        // Przekazujemy dynamiczne tętno do paska
+                        StatusCard(
+                          isHighContrast: isHighContrast,
+                          tetno: ostatniPomiar.tetno,
+                        ),
+
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -54,7 +69,8 @@ class HeartRateScreen extends StatelessWidget {
               ],
             ),
           ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
           floatingActionButton: const CustomBottomNavBar(activeIndex: 1),
         );
       },
@@ -85,8 +101,8 @@ class HeartIndicator extends StatelessWidget {
     return Container(
       width: 160,
       height: 160,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7BABF),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF7BABF),
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -101,8 +117,8 @@ class HeartIndicator extends StatelessWidget {
           child: SvgPicture.asset(
             'assets/serce.svg',
             colorFilter: const ColorFilter.mode(
-               Color(0xFFEB4755), 
-               BlendMode.srcIn
+              Color(0xFFEB4755),
+              BlendMode.srcIn,
             ),
           ),
         ),
@@ -113,7 +129,13 @@ class HeartIndicator extends StatelessWidget {
 
 class ResultValue extends StatelessWidget {
   final bool isHighContrast;
-  const ResultValue({super.key, required this.isHighContrast});
+  final int tetno;
+
+  const ResultValue({
+    super.key,
+    required this.isHighContrast,
+    required this.tetno,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +148,7 @@ class ResultValue extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: '82',
+                text: tetno.toString(), // Wyświetlanie dynamicznego tętna
                 style: TextStyle(
                   fontSize: 64,
                   fontWeight: FontWeight.w400,
@@ -149,16 +171,18 @@ class ResultValue extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.access_time,
-                size: 16,
-                color: isHighContrast ? Colors.yellow : const Color(0xFFEB4755),
-                ),
+            Icon(
+              Icons.access_time,
+              size: 16,
+              color: isHighContrast ? Colors.yellow : const Color(0xFFEB4755),
+            ),
             const SizedBox(width: 4),
             Text(
-              '5 minut temu',
+              'Ostatni pomiar',
               style: TextStyle(
-                  color: isHighContrast ? Colors.yellow : Colors.grey,
-                  fontSize: 14),
+                color: isHighContrast ? Colors.yellow : Colors.grey,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -169,16 +193,46 @@ class ResultValue extends StatelessWidget {
 
 class StatusCard extends StatelessWidget {
   final bool isHighContrast;
-  const StatusCard({super.key, required this.isHighContrast});
+  final int tetno;
+
+  const StatusCard({
+    super.key,
+    required this.isHighContrast,
+    required this.tetno,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // --- LOGIKA WIDEŁEK (TĘTNO) ---
+    String statusText;
+    Color statusColor;
+    IconData statusIcon;
+
+    if (tetno < 60) {
+      statusText = 'obniżone';
+      statusColor = isHighContrast ? Colors.yellow : Colors.blue;
+      statusIcon = Icons.arrow_downward_rounded;
+    } else if (tetno > 100) {
+      statusText = 'podwyższone';
+      statusColor = isHighContrast
+          ? Colors.yellow
+          : const Color(0xFFEB4755); // Czerwony alert
+      statusIcon = Icons.warning_amber_rounded;
+    } else {
+      statusText = 'w normie';
+      statusColor = isHighContrast ? Colors.yellow : Colors.green;
+      statusIcon = Icons.favorite;
+    }
+    // -----------------------------
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isHighContrast ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: isHighContrast ? Border.all(color: Colors.yellow, width: 2) : null,
+        border: isHighContrast
+            ? Border.all(color: Colors.yellow, width: 2)
+            : null,
         boxShadow: isHighContrast
             ? []
             : [
@@ -195,29 +249,34 @@ class StatusCard extends StatelessWidget {
           Text(
             'twoje tętno jest',
             style: TextStyle(
-                color: isHighContrast ? Colors.yellow : Colors.grey, fontSize: 12),
+              color: isHighContrast ? Colors.yellow : Colors.grey,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 4),
           Row(
             children: [
               Text(
-                'w normie',
+                statusText, // Wyświetlamy dynamiczny tekst
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w500,
-                  color:
-                      isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
+                  color: isHighContrast
+                      ? Colors.yellow
+                      : statusColor, // Dynamiczny kolor
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.favorite,
-                  color: isHighContrast ? Colors.yellow : Colors.green, size: 20),
+              Icon(
+                statusIcon,
+                color: statusColor,
+                size: 22,
+              ), // Dynamiczna ikona
             ],
           ),
-          
+
           const SizedBox(height: 15),
-          
-          // --- PRZYWRÓCONY PRZEDZIAŁ 60-100 BPM ---
+
           Center(
             child: RichText(
               text: TextSpan(
@@ -227,7 +286,9 @@ class StatusCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w400,
-                      color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
+                      color: isHighContrast
+                          ? Colors.yellow
+                          : const Color(0xFF2D2D2D),
                     ),
                   ),
                   TextSpan(
@@ -235,7 +296,9 @@ class StatusCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
+                      color: isHighContrast
+                          ? Colors.yellow
+                          : const Color(0xFF2D2D2D),
                     ),
                   ),
                 ],
@@ -243,11 +306,11 @@ class StatusCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // ----------------------------------------
 
           CustomBarGauge(
             isHighContrast: isHighContrast,
-            activeColor: const Color(0xFFEB4755),
+            activeColor: statusColor, // Pasek też zmieni kolor!
+            tetno: tetno,
           ),
         ],
       ),
@@ -255,49 +318,50 @@ class StatusCard extends StatelessWidget {
   }
 }
 
-// --- NOWE KLASY DO OBSŁUGI PASKA ---
-
 class CustomBarGauge extends StatelessWidget {
   final bool isHighContrast;
   final Color activeColor;
+  final int tetno;
 
   const CustomBarGauge({
-    super.key, 
-    required this.isHighContrast, 
+    super.key,
+    required this.isHighContrast,
     required this.activeColor,
+    required this.tetno,
   });
 
   @override
   Widget build(BuildContext context) {
     final barColor = isHighContrast ? Colors.yellow : activeColor;
-    final bgColor = isHighContrast ? Colors.grey.shade900 : const Color(0xFFE0E0E0);
+    final bgColor = isHighContrast
+        ? Colors.grey.shade900
+        : const Color(0xFFE0E0E0);
     final dottedColor = isHighContrast ? Colors.black : Colors.white;
     final sideTextColor = isHighContrast ? Colors.yellow : Colors.grey;
 
     return Column(
       children: [
         SizedBox(
-          height: 30, 
+          height: 30,
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              // Tło paska
               Container(
-                height: 24, 
+                height: 24,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: bgColor,
-                  border: isHighContrast ? Border.all(color: Colors.yellow) : null,
+                  border: isHighContrast
+                      ? Border.all(color: Colors.yellow)
+                      : null,
                 ),
               ),
-              
-              // Wypełniony pasek z kropkami
               Align(
-                alignment: const Alignment(0.0, 0.0), // Pozycja (środek dla przykładu)
+                alignment: const Alignment(0.0, 0.0),
                 child: Container(
                   height: 24,
-                  width: 100, 
+                  width: 100,
                   decoration: BoxDecoration(
                     color: barColor,
                     borderRadius: BorderRadius.circular(12),
@@ -314,33 +378,17 @@ class CustomBarGauge extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        // Opisy pod paskiem
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('20', style: TextStyle(color: sideTextColor, fontSize: 12)),
             Text(
-              '20', 
-              style: TextStyle(
-                color: sideTextColor, 
-                fontSize: 12,
-              )
-            ),
-            Text(
-              "82\nOstatni pomiar",
+              "$tetno\nOstatni pomiar", // Wyświetlanie dynamicznego tętna na pasku
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: barColor, 
-                fontSize: 10, 
-              ),
+              style: TextStyle(color: barColor, fontSize: 10),
             ),
-            Text(
-              '140', 
-              style: TextStyle(
-                color: sideTextColor, 
-                fontSize: 12,
-              )
-            ),
+            Text('140', style: TextStyle(color: sideTextColor, fontSize: 12)),
           ],
         ),
       ],
