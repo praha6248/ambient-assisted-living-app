@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path; 
 import '../widgets/common_widgets.dart';
+import '../services/theme_service.dart';
 
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
@@ -10,99 +11,100 @@ class MapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final LatLng centerLocation = const LatLng(54.3716, 18.6193);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const HeaderSection(),
-            Expanded(
-              child: Stack(
-                children: [
-                  FlutterMap(
-                    options: MapOptions(
-                      initialCenter: centerLocation,
-                      initialZoom: 16.0,
-                      interactionOptions: const InteractionOptions(
+    return ValueListenableBuilder<bool>(
+      valueListenable: ThemeService().isHighContrast,
+      builder: (context, isHighContrast, child) {
+        return Scaffold(
+          backgroundColor: isHighContrast ? Colors.black : const Color(0xFFF5F5F7),
+          body: SafeArea(
+            child: Stack(
+              children: [
+                FlutterMap(
+                  options: MapOptions(
+                    initialCenter: centerLocation,
+                    initialZoom: 16.0,
+                    interactionOptions: const InteractionOptions(
                       flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                      ),
                     ),
-                    
-                    children: [
-                      TileLayer(
-                        urlTemplate: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                      ),
-                      
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: centerLocation,
-                            width: 80,
-                            height: 80,
-                            // --- ZMIANA: To sprawia, że ludzik jest zawsze pionowo ---
-                            rotate: false, 
-                            // --------------------------------------------------------
-                            child: const UserLocationMarker(),
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
+                  children: [
+                    TileLayer(
+                      urlTemplate: isHighContrast 
+                          ? 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png' 
+                          : 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: centerLocation,
+                          width: 80,
+                          height: 80,
+                          rotate: false, 
+                          child: UserLocationMarker(isHighContrast: isHighContrast),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: isHighContrast ? Colors.black : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: isHighContrast ? Border.all(color: Colors.yellow, width: 2) : null,
+                      boxShadow: [
+                        if (!isHighContrast)
                           BoxShadow(
                             color: Colors.black.withOpacity(0.08),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'imie jest 200 m od domu',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF2D2D2D),
-                            ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'imie jest 200 m od domu',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Na żywo',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF00C896),
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Na żywo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isHighContrast ? Colors.yellow : const Color(0xFF3F976E),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: const CustomBottomNavBar(activeIndex: 2),
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: const CustomBottomNavBar(activeIndex: 2),
+        );
+      }
     );
   }
 }
 
-// --- Pozostałe klasy (UserLocationMarker, TrianglePainter) pozostają bez zmian ---
 class UserLocationMarker extends StatelessWidget {
-  const UserLocationMarker({super.key});
+  final bool isHighContrast;
+  
+  const UserLocationMarker({super.key, this.isHighContrast = false});
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -110,20 +112,41 @@ class UserLocationMarker extends StatelessWidget {
       children: [
         Container(
           width: 60, height: 60,
-          decoration: BoxDecoration(color: const Color(0xFFFF99BE).withOpacity(0.3), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: isHighContrast 
+                ? Colors.yellow.withOpacity(0.3) 
+                : const Color(0xFF5079287).withOpacity(0.4),
+            shape: BoxShape.circle
+          ),
         ),
         Container(
           width: 40, height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFffffff), shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5)],
+            color: isHighContrast ? Colors.black : const Color(0xFFffffff), 
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isHighContrast ? Colors.yellow : Colors.white, 
+              width: 3
+            ),
+            boxShadow: [
+              if (!isHighContrast)
+                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5)
+            ],
           ),
-          child: const Icon(Icons.person, color: Colors.black87, size: 24),
+          child: Icon(
+            Icons.person, 
+            color: isHighContrast ? Colors.yellow : Colors.black87, 
+            size: 24
+          ),
         ),
         Positioned(
           bottom: 10,
-          child: CustomPaint(size: const Size(10, 10), painter: TrianglePainter()),
+          child: CustomPaint(
+            size: const Size(10, 10), 
+            painter: TrianglePainter(
+              color: isHighContrast ? Colors.yellow : Colors.white
+            )
+          ),
         )
       ],
     );
@@ -131,9 +154,13 @@ class UserLocationMarker extends StatelessWidget {
 }
 
 class TrianglePainter extends CustomPainter {
+  final Color color;
+  
+  TrianglePainter({this.color = Colors.white});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+    final paint = Paint()..color = color..style = PaintingStyle.fill;
     final path = Path();
     path.moveTo(0, 0); path.lineTo(size.width / 2, size.height); path.lineTo(size.width, 0); path.close();
     canvas.drawPath(path, paint);

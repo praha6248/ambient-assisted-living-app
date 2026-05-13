@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/local_notifications.dart';
-import 'screens/temp_screen.dart';
+import 'screens/blood_saturation_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF669D)),
         fontFamily: 'Roboto',
       ),
-      home: const TemperatureScreen(),
+      home: const BloodSaturationScreen(),
     );
   }
 }

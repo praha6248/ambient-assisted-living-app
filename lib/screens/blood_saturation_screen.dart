@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../widgets/common_widgets.dart'; 
-import 'heart_history_screen.dart';
+import '../widgets/common_widgets.dart';
+import 'blood_saturation_history_screen.dart';
 import '../services/theme_service.dart';
 
-class HeartRateScreen extends StatelessWidget {
-  const HeartRateScreen({super.key});
+class BloodSaturationScreen extends StatelessWidget {
+  const BloodSaturationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: ThemeService().isHighContrast,
       builder: (context, isHighContrast, child) {
-        
         final bgColor = isHighContrast ? Colors.black : const Color(0xFFF4F1F2);
 
         return Scaffold(
@@ -20,14 +19,17 @@ class HeartRateScreen extends StatelessWidget {
           body: SafeArea(
             child: Column(
               children: [
+                // Ujednolicony HeaderSection (taki sam jak w heart_screen)
                 HeaderSection(
-                  title: 'Pomiar tętna',
+                  title: 'Nasycenie krwi',
                   showChartIcon: true,
                   onHistoryTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const HeartHistoryScreen()),
+                        builder: (context) =>
+                            const BloodSaturationHistoryScreen(),
+                      ),
                     );
                   },
                 ),
@@ -38,13 +40,11 @@ class HeartRateScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        const SizedBox(height: 40),
+                        SaturationIndicator(isHighContrast: isHighContrast),
                         const SizedBox(height: 20),
-                        // Serce (z Twoim czerwonym kolorem w środku)
-                        HeartIndicator(isHighContrast: isHighContrast),
-                        const SizedBox(height: 20), 
                         ResultValue(isHighContrast: isHighContrast),
                         const SizedBox(height: 30),
-                        // Karta z nowym paskiem
                         StatusCard(isHighContrast: isHighContrast),
                         const SizedBox(height: 100),
                       ],
@@ -54,27 +54,30 @@ class HeartRateScreen extends StatelessWidget {
               ],
             ),
           ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: const CustomBottomNavBar(activeIndex: 1),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: const CustomBottomNavBar(activeIndex: 0),
         );
       },
     );
   }
 }
 
-class HeartIndicator extends StatelessWidget {
+class SaturationIndicator extends StatelessWidget {
   final bool isHighContrast;
-  const HeartIndicator({super.key, required this.isHighContrast});
+  const SaturationIndicator({super.key, required this.isHighContrast});
 
   @override
   Widget build(BuildContext context) {
+    const Color dropBlue = Color(0xFF4B93D1);
+
     if (isHighContrast) {
       return SizedBox(
         width: 170,
         height: 170,
         child: Center(
           child: SvgPicture.asset(
-            'assets/serce.svg',
+            'assets/sat.svg',
             width: 140,
             colorFilter: const ColorFilter.mode(Colors.yellow, BlendMode.srcIn),
           ),
@@ -83,27 +86,31 @@ class HeartIndicator extends StatelessWidget {
     }
 
     return Container(
-      width: 160,
-      height: 160,
+      width: 180,
+      height: 180,
       decoration: BoxDecoration(
-        color: const Color(0xFFF7BABF),
+        color: const Color(0xFFCDE4F7),
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFCDE4F7).withOpacity(0.5),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
       ),
       child: Center(
         child: Container(
           width: 100,
           height: 100,
           decoration: const BoxDecoration(
-            color: Color(0xFFF28C95),
+            color: Color(0xFF8BC0E9),
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(22.0),
           child: SvgPicture.asset(
-            'assets/serce.svg',
-            colorFilter: const ColorFilter.mode(
-               Color(0xFFEB4755), 
-               BlendMode.srcIn
-            ),
+            'assets/sat.svg',
+            colorFilter: const ColorFilter.mode(dropBlue, BlendMode.srcIn),
           ),
         ),
       ),
@@ -126,7 +133,7 @@ class ResultValue extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: '82',
+                text: '98',
                 style: TextStyle(
                   fontSize: 64,
                   fontWeight: FontWeight.w400,
@@ -135,7 +142,7 @@ class ResultValue extends StatelessWidget {
                 ),
               ),
               TextSpan(
-                text: ' BPM',
+                text: ' %',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w400,
@@ -149,16 +156,18 @@ class ResultValue extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.access_time,
-                size: 16,
-                color: isHighContrast ? Colors.yellow : const Color(0xFFEB4755),
-                ),
+            Icon(
+              Icons.access_time,
+              size: 16,
+              color: isHighContrast ? Colors.yellow : const Color(0xFF4B93D1),
+            ),
             const SizedBox(width: 4),
             Text(
               '5 minut temu',
               style: TextStyle(
-                  color: isHighContrast ? Colors.yellow : Colors.grey,
-                  fontSize: 14),
+                color: isHighContrast ? Colors.yellow : Colors.grey,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -178,7 +187,9 @@ class StatusCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isHighContrast ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: isHighContrast ? Border.all(color: Colors.yellow, width: 2) : null,
+        border: isHighContrast
+            ? Border.all(color: Colors.yellow, width: 2)
+            : null,
         boxShadow: isHighContrast
             ? []
             : [
@@ -193,9 +204,11 @@ class StatusCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'twoje tętno jest',
+            'twoje nasycenie krwi jest',
             style: TextStyle(
-                color: isHighContrast ? Colors.yellow : Colors.grey, fontSize: 12),
+              color: isHighContrast ? Colors.yellow : Colors.grey,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 4),
           Row(
@@ -205,37 +218,47 @@ class StatusCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w500,
-                  color:
-                      isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
+                  color: isHighContrast
+                      ? Colors.yellow
+                      : const Color(0xFF2D2D2D),
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.favorite,
-                  color: isHighContrast ? Colors.yellow : Colors.green, size: 20),
+              SvgPicture.asset(
+                'assets/sat.svg',
+                width: 22,
+                height: 22,
+                colorFilter: ColorFilter.mode(
+                  isHighContrast ? Colors.yellow : const Color(0xFF1B8E3B),
+                  BlendMode.srcIn,
+                ),
+              ),
             ],
           ),
-          
           const SizedBox(height: 15),
-          
-          // --- PRZYWRÓCONY PRZEDZIAŁ 60-100 BPM ---
+
           Center(
             child: RichText(
               text: TextSpan(
                 children: [
                   TextSpan(
-                    text: '60-100',
+                    text: '90-100', // Prawidłowa norma SpO2
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w400,
-                      color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
+                      color: isHighContrast
+                          ? Colors.yellow
+                          : const Color(0xFF2D2D2D),
                     ),
                   ),
                   TextSpan(
-                    text: ' BPM',
+                    text: ' %',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
+                      color: isHighContrast
+                          ? Colors.yellow
+                          : const Color(0xFF2D2D2D),
                     ),
                   ),
                 ],
@@ -243,11 +266,11 @@ class StatusCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // ----------------------------------------
 
-          CustomBarGauge(
+          // Nowy pasek zaadaptowany z heart_screen
+          _CustomSpO2BarGauge(
             isHighContrast: isHighContrast,
-            activeColor: const Color(0xFFEB4755),
+            activeColor: const Color(0xFF4B93D1), // Niebieski dla SpO2
           ),
         ],
       ),
@@ -255,49 +278,52 @@ class StatusCard extends StatelessWidget {
   }
 }
 
-// --- NOWE KLASY DO OBSŁUGI PASKA ---
+// --- KLASY DLA PASKA ---
 
-class CustomBarGauge extends StatelessWidget {
+class _CustomSpO2BarGauge extends StatelessWidget {
   final bool isHighContrast;
   final Color activeColor;
 
-  const CustomBarGauge({
-    super.key, 
-    required this.isHighContrast, 
+  const _CustomSpO2BarGauge({
+    required this.isHighContrast,
     required this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final barColor = isHighContrast ? Colors.yellow : activeColor;
-    final bgColor = isHighContrast ? Colors.grey.shade900 : const Color(0xFFE0E0E0);
+    final bgColor = isHighContrast
+        ? Colors.grey.shade900
+        : const Color(0xFFE0E0E0);
     final dottedColor = isHighContrast ? Colors.black : Colors.white;
     final sideTextColor = isHighContrast ? Colors.yellow : Colors.grey;
 
     return Column(
       children: [
         SizedBox(
-          height: 30, 
+          height: 30,
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
               // Tło paska
               Container(
-                height: 24, 
+                height: 24,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: bgColor,
-                  border: isHighContrast ? Border.all(color: Colors.yellow) : null,
+                  border: isHighContrast
+                      ? Border.all(color: Colors.yellow)
+                      : null,
                 ),
               ),
-              
-              // Wypełniony pasek z kropkami
+
+              // Wypełniony pasek (przesunięty na prawą stronę dla 98%)
               Align(
-                alignment: const Alignment(0.0, 0.0), // Pozycja (środek dla przykładu)
+                alignment: const Alignment(0.85, 0.0),
                 child: Container(
                   height: 24,
-                  width: 100, 
+                  width: 100,
                   decoration: BoxDecoration(
                     color: barColor,
                     borderRadius: BorderRadius.circular(12),
@@ -305,7 +331,7 @@ class CustomBarGauge extends StatelessWidget {
                   child: Center(
                     child: CustomPaint(
                       size: const Size(1, 24),
-                      painter: DottedLinePainter(color: dottedColor),
+                      painter: _DottedLineSpO2Painter(color: dottedColor),
                     ),
                   ),
                 ),
@@ -314,33 +340,17 @@ class CustomBarGauge extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        // Opisy pod paskiem
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('70', style: TextStyle(color: sideTextColor, fontSize: 12)),
             Text(
-              '20', 
-              style: TextStyle(
-                color: sideTextColor, 
-                fontSize: 12,
-              )
-            ),
-            Text(
-              "82\nOstatni pomiar",
+              "98\nOstatni pomiar",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: barColor, 
-                fontSize: 10, 
-              ),
+              style: TextStyle(color: barColor, fontSize: 10),
             ),
-            Text(
-              '140', 
-              style: TextStyle(
-                color: sideTextColor, 
-                fontSize: 12,
-              )
-            ),
+            Text('100', style: TextStyle(color: sideTextColor, fontSize: 12)),
           ],
         ),
       ],
@@ -348,9 +358,9 @@ class CustomBarGauge extends StatelessWidget {
   }
 }
 
-class DottedLinePainter extends CustomPainter {
+class _DottedLineSpO2Painter extends CustomPainter {
   final Color color;
-  DottedLinePainter({required this.color});
+  _DottedLineSpO2Painter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

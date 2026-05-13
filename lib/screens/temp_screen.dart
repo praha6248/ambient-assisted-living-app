@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/common_widgets.dart';
-import '../widgets/notification_bell.dart';
+import '../services/theme_service.dart';
 
 class TemperatureScreen extends StatefulWidget {
   const TemperatureScreen({super.key});
@@ -66,69 +66,58 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const HeaderSection(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    const TitleSection(),
-                    const SizedBox(height: 40),
-                    
-                    TemperatureIndicator(
-                      temp: _targetTemp,
-                      gradientColors: _gradientColors,
-                    ),
-                    
-                    const SizedBox(height: 30),
-                    
-                    CurrentTempSection(
-                      roomTemp: _roomTemp, 
-                      targetTemp: _targetTemp
-                    ),
-                    
-                    const SizedBox(height: 40),
-                    ControlButtons(
-                      onDecrease: _decreaseTemp,
-                      onIncrease: _increaseTemp,
-                    ),
-                    const SizedBox(height: 100),
-                  ],
+    return ValueListenableBuilder<bool>(
+      valueListenable: ThemeService().isHighContrast,
+      builder: (context, isHighContrast, child) {
+        return Scaffold(
+          backgroundColor: isHighContrast ? Colors.black : const Color(0xFFF4F1F2),
+          body: SafeArea(
+            child: Column(
+              children: [
+                HeaderSection(
+                  title: 'Temperatura',
+                  showChartIcon: false, 
                 ),
-              ),
+                
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 50),
+                        
+                        TemperatureIndicator(
+                          temp: _targetTemp,
+                          gradientColors: _gradientColors,
+                          isHighContrast: isHighContrast,
+                        ),
+                        
+                        const SizedBox(height: 30),
+                        
+                        CurrentTempSection(
+                          roomTemp: _roomTemp, 
+                          targetTemp: _targetTemp,
+                          isHighContrast: isHighContrast,
+                        ),
+                        
+                        const SizedBox(height: 40),
+                        ControlButtons(
+                          onDecrease: _decreaseTemp,
+                          onIncrease: _increaseTemp,
+                          isHighContrast: isHighContrast,
+                        ),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: const CustomBottomNavBar(activeIndex: 0),
-    );
-  }
-}
-
-class TitleSection extends StatelessWidget {
-  const TitleSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          'Temperatura',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w400,
-            color: Color(0xFF2D2D2D),
           ),
-        ),
-        const NotificationBell(),
-      ],
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: const CustomBottomNavBar(activeIndex: 0),
+        );
+      }
     );
   }
 }
@@ -136,11 +125,13 @@ class TitleSection extends StatelessWidget {
 class TemperatureIndicator extends StatelessWidget {
   final double temp;
   final List<Color> gradientColors;
+  final bool isHighContrast;
 
   const TemperatureIndicator({
     super.key,
     required this.temp,
     required this.gradientColors,
+    required this.isHighContrast,
   });
 
   @override
@@ -149,42 +140,46 @@ class TemperatureIndicator extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         Container(
-          width: 220,
-          height: 220,
+          width: 240,
+          height: 240,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
-              colors: gradientColors,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: gradientColors[0].withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
-              )
-            ],
+            gradient: isHighContrast 
+              ? null 
+              : LinearGradient(
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                  colors: gradientColors,
+                ),
+            color: isHighContrast ? Colors.black : null,
+            border: isHighContrast ? Border.all(color: Colors.yellow, width: 4) : null,
           ),
         ),
         Container(
           width: 160,
           height: 160,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF5F5F7),
+          decoration: BoxDecoration(
+            color: isHighContrast ? Colors.black : const Color(0xFFF5F5F7),
             shape: BoxShape.circle,
+            border: isHighContrast ? Border.all(color: Colors.yellow, width: 2) : null,
           ),
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Cel", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  "Cel", 
+                  style: TextStyle(
+                    fontSize: 12, 
+                    color: isHighContrast ? Colors.yellow : Colors.grey
+                  )
+                ),
                 Text(
                   '${temp.toInt()}°C',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF2D2D2D),
+                    color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
                   ),
                 ),
               ],
@@ -199,11 +194,13 @@ class TemperatureIndicator extends StatelessWidget {
 class CurrentTempSection extends StatelessWidget {
   final double roomTemp;   
   final double targetTemp; 
+  final bool isHighContrast;
 
   const CurrentTempSection({
     super.key, 
     required this.roomTemp, 
-    required this.targetTemp
+    required this.targetTemp,
+    required this.isHighContrast,
   });
 
   @override
@@ -213,19 +210,22 @@ class CurrentTempSection extends StatelessWidget {
 
     if (targetTemp > roomTemp) {
       statusIcon = Icons.arrow_drop_up;
-      statusColor = Colors.orangeAccent;
+      statusColor = isHighContrast ? Colors.yellow : Colors.orangeAccent;
     } else if (targetTemp < roomTemp) {
       statusIcon = Icons.arrow_drop_down;
-      statusColor = Colors.lightBlue; 
+      statusColor = isHighContrast ? Colors.yellow : Colors.lightBlue; 
     } else {
       statusIcon = null; 
     }
 
     return Column(
       children: [
-        const Text(
+        Text(
           'Temperatura w pokoju',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
+          style: TextStyle(
+            color: isHighContrast ? Colors.yellow : Colors.grey, 
+            fontSize: 16
+          ),
         ),
         const SizedBox(height: 5),
         Row(
@@ -234,16 +234,20 @@ class CurrentTempSection extends StatelessWidget {
             if (statusIcon != null)
               Icon(statusIcon, color: statusColor, size: 40)
             else
-              const Icon(Icons.check_circle_outline, color: Colors.green, size: 24),
+              Icon(
+                Icons.check_circle_outline, 
+                color: isHighContrast ? Colors.yellow : Colors.green, 
+                size: 24
+              ),
 
             const SizedBox(width: 8),
             
             Text(
               '${roomTemp.toInt()}°C',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF2D2D2D),
+                color: isHighContrast ? Colors.yellow : const Color(0xFF2D2D2D),
               ),
             ),
           ],
@@ -256,11 +260,13 @@ class CurrentTempSection extends StatelessWidget {
 class ControlButtons extends StatelessWidget {
   final VoidCallback onDecrease;
   final VoidCallback onIncrease;
+  final bool isHighContrast;
 
   const ControlButtons({
     super.key,
     required this.onDecrease,
     required this.onIncrease,
+    required this.isHighContrast,
   });
 
   @override
@@ -282,17 +288,23 @@ class ControlButtons extends StatelessWidget {
         child: Container(
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isHighContrast ? Colors.black : Colors.white,
             borderRadius: BorderRadius.circular(20),
+            border: isHighContrast ? Border.all(color: Colors.yellow, width: 2) : null,
             boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
+              if (!isHighContrast)
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
             ],
           ),
-          child: Icon(icon, size: 32, color: Colors.black87),
+          child: Icon(
+            icon, 
+            size: 32, 
+            color: isHighContrast ? Colors.yellow : Colors.black87
+          ),
         ),
       ),
     );
