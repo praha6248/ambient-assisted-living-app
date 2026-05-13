@@ -17,3 +17,30 @@ class Pomiar {
     );
   }
 }
+
+class Lokalizacja {
+  final String data;
+  final double lat;
+  final double lon;
+
+  Lokalizacja({required this.data, required this.lat, required this.lon});
+
+  factory Lokalizacja.fromJson(Map<String, dynamic> json) {
+    return Lokalizacja(
+      data: json['data'],
+      lat: json['lat'].toDouble(),
+      lon: json['lon'].toDouble(),
+    );
+  }
+}
+
+class Zdarzenie {
+  final String data;
+  final String typ_zdarzenia;
+
+  Zdarzenie({required this.data, required this.typ_zdarzenia});
+
+  factory Zdarzenie.fromJson(Map<String, dynamic> json) {
+    return Zdarzenie(data: json['data'], typ_zdarzenia: json['typ_zdarzenia']);
+  }
+}
