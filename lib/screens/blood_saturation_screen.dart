@@ -4,16 +4,28 @@ import '../widgets/common_widgets.dart';
 import 'blood_saturation_history_screen.dart';
 import '../services/theme_service.dart';
 import '../connection/pomiar_model.dart';
-import '../services/pomiar_service.dart';
+import '../connection/api_service.dart'; // Upewnij się, że ścieżka do api_service jest poprawna
 
-class BloodSaturationScreen extends StatelessWidget {
+class BloodSaturationScreen extends StatefulWidget {
   const BloodSaturationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Pobieramy ostatni pomiar z modelu
-    final Pomiar ostatniPomiar = PomiarService.getOstatniPomiar();
+  State<BloodSaturationScreen> createState() => _BloodSaturationScreenState();
+}
 
+class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
+  late Future<Pomiar> _ostatniPomiarFuture;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pobieramy dane o saturacji z API (Raspberry Pi) podczas ładowania ekranu
+    _ostatniPomiarFuture = _apiService.getOstatniPomiar();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: ThemeService().isHighContrast,
       builder: (context, isHighContrast, child) {
@@ -37,27 +49,66 @@ class BloodSaturationScreen extends StatelessWidget {
                     );
                   },
                 ),
+
+                // Wstawiamy FutureBuilder do asynchronicznego ładowania danych
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 40),
-                        SaturationIndicator(isHighContrast: isHighContrast),
-                        const SizedBox(height: 20),
-                        ResultValue(
-                          isHighContrast: isHighContrast,
-                          saturacja: ostatniPomiar.saturacja,
+                  child: FutureBuilder<Pomiar>(
+                    future: _ostatniPomiarFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: isHighContrast
+                                ? Colors.yellow
+                                : const Color(0xFF4B93D1),
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Błąd pobierania danych:\n${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isHighContrast
+                                  ? Colors.yellow
+                                  : Colors.red,
+                            ),
+                          ),
+                        );
+                      } else if (!snapshot.hasData) {
+                        return const Center(
+                          child: Text('Brak danych o saturacji krwi.'),
+                        );
+                      }
+
+                      final Pomiar ostatniPomiar = snapshot.data!;
+
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 40),
+                            SaturationIndicator(isHighContrast: isHighContrast),
+                            const SizedBox(height: 20),
+
+                            // Przekazujemy prawdziwą saturację z bazy
+                            ResultValue(
+                              isHighContrast: isHighContrast,
+                              saturacja: ostatniPomiar.saturacja,
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Przekazujemy prawdziwą saturację do paska i widełek
+                            StatusCard(
+                              isHighContrast: isHighContrast,
+                              saturacja: ostatniPomiar.saturacja,
+                            ),
+                            const SizedBox(height: 100),
+                          ],
                         ),
-                        const SizedBox(height: 30),
-                        StatusCard(
-                          isHighContrast: isHighContrast,
-                          saturacja: ostatniPomiar.saturacja,
-                        ),
-                        const SizedBox(height: 100),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -94,8 +145,8 @@ class SaturationIndicator extends StatelessWidget {
     return Container(
       width: 180,
       height: 180,
-      decoration: BoxDecoration(
-        color: const Color(0xFFCDE4F7),
+      decoration: const BoxDecoration(
+        color: Color(0xFFCDE4F7),
         shape: BoxShape.circle,
       ),
       child: Center(

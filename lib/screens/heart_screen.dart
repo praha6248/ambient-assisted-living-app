@@ -4,16 +4,28 @@ import '../widgets/common_widgets.dart';
 import 'heart_history_screen.dart';
 import '../services/theme_service.dart';
 import '../connection/pomiar_model.dart';
-import '../services/pomiar_service.dart';
+import '../connection/api_service.dart'; // Upewnij się, że ścieżka jest poprawna!
 
-class HeartRateScreen extends StatelessWidget {
+class HeartRateScreen extends StatefulWidget {
   const HeartRateScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Pobieramy ostatni pomiar z naszego serwisu
-    final Pomiar ostatniPomiar = PomiarService.getOstatniPomiar();
+  State<HeartRateScreen> createState() => _HeartRateScreenState();
+}
 
+class _HeartRateScreenState extends State<HeartRateScreen> {
+  late Future<Pomiar> _ostatniPomiarFuture;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pobieramy dane z API (Raspberry Pi) podczas ładowania ekranu
+    _ostatniPomiarFuture = _apiService.getOstatniPomiar();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: ThemeService().isHighContrast,
       builder: (context, isHighContrast, child) {
@@ -37,33 +49,67 @@ class HeartRateScreen extends StatelessWidget {
                   },
                 ),
 
+                // Wstawiamy FutureBuilder, by czekać na dane z bazy
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 20),
-                        HeartIndicator(isHighContrast: isHighContrast),
-                        const SizedBox(height: 20),
+                  child: FutureBuilder<Pomiar>(
+                    future: _ostatniPomiarFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: isHighContrast
+                                ? Colors.yellow
+                                : Colors.redAccent,
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Błąd pobierania danych:\n${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isHighContrast
+                                  ? Colors.yellow
+                                  : Colors.red,
+                            ),
+                          ),
+                        );
+                      } else if (!snapshot.hasData) {
+                        return const Center(
+                          child: Text('Brak danych o tętnie.'),
+                        );
+                      }
 
-                        // Przekazujemy dynamiczne tętno
-                        ResultValue(
-                          isHighContrast: isHighContrast,
-                          tetno: ostatniPomiar.tetno,
+                      final Pomiar ostatniPomiar = snapshot.data!;
+
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 20),
+                            HeartIndicator(isHighContrast: isHighContrast),
+                            const SizedBox(height: 20),
+
+                            // Przekazujemy prawdziwe tętno z API
+                            ResultValue(
+                              isHighContrast: isHighContrast,
+                              tetno: ostatniPomiar.tetno,
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Pasek z prawidziwym tętnem z API
+                            StatusCard(
+                              isHighContrast: isHighContrast,
+                              tetno: ostatniPomiar.tetno,
+                            ),
+
+                            const SizedBox(height: 100),
+                          ],
                         ),
-
-                        const SizedBox(height: 30),
-
-                        // Przekazujemy dynamiczne tętno do paska
-                        StatusCard(
-                          isHighContrast: isHighContrast,
-                          tetno: ostatniPomiar.tetno,
-                        ),
-
-                        const SizedBox(height: 100),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
