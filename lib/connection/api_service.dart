@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'pomiar_model.dart';
+import 'package:socks5_proxy/socks_client.dart';
 
 class ApiService {
   late Dio _dio;
@@ -14,13 +15,15 @@ class ApiService {
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        // Łączymy się z lokalnym portem, który otworzył tor_rest
-        client.findProxy = (uri) => "SOCKS5 127.0.0.1:9050";
+        SocksTCPClient.assignToHttpClient(client, [
+          ProxySettings(InternetAddress.loopbackIPv4, 9050),
+        ]);
+        client.badCertificateCallback = (cert, host, port) => true;
         return client;
       },
     );
 
-    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.connectTimeout = const Duration(seconds: 50);
   }
 
   Future<Pomiar> getOstatniPomiar() async {
